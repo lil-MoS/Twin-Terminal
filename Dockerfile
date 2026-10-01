@@ -1,7 +1,8 @@
 FROM alpine:latest
 
 RUN apk add --no-cache \
-    ttyd \
+    python3 \
+    py3-pip \
     bash \
     curl \
     wget \
@@ -9,19 +10,22 @@ RUN apk add --no-cache \
     nano \
     vim \
     htop \
-    ca-certificates \
-    tzdata
+    procps \
+    util-linux \
+    ca-certificates
 
-WORKDIR /data
+RUN pip3 install --no-cache-dir --break-system-packages aiohttp
 
-COPY start.sh /start.sh
-COPY index.html /data/index.html
+WORKDIR /app
 
-RUN chmod +x /start.sh
+COPY app.py /app/app.py
+COPY index.html /app/index.html
+
+RUN mkdir -p /data
 
 ENV PORT=7681
-ENV TZ=UTC
+ENV TWIN_PASSWORD=changeme
 
 EXPOSE 7681
 
-CMD ["/start.sh"]
+CMD ["python3", "/app/app.py"]
