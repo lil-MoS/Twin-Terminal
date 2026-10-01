@@ -1,1153 +1,350 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
-<title>Twin Terminal</title>
-
-<link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"
->
-
-<script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
-
-<style>
-
-* {
-    box-sizing: border-box;
-}
-
-html,
-body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
-    background: #08080d;
-    color: #ffffff;
-    font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-}
-
-body {
-    display: flex;
-}
-
-/* LOGIN */
-
-.login {
-    position: fixed;
-    inset: 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background:
-        radial-gradient(
-            circle at 50% 20%,
-            rgba(124,58,237,.18),
-            transparent 40%
-        ),
-        #08080d;
-
-    z-index: 100;
-}
-
-.login-box {
-    width: min(420px, calc(100% - 32px));
-
-    padding: 34px;
-
-    background:
-        rgba(18,18,28,.88);
-
-    border: 1px solid rgba(168,85,247,.25);
-
-    border-radius: 20px;
-
-    box-shadow:
-        0 30px 100px rgba(0,0,0,.65),
-        0 0 60px rgba(124,58,237,.08);
-
-    backdrop-filter: blur(20px);
-}
-
-.logo {
-    width: 58px;
-    height: 58px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 16px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #7c3aed,
-            #a855f7
-        );
-
-    font-size: 27px;
-
-    box-shadow:
-        0 10px 35px rgba(124,58,237,.35);
-}
-
-.login h1 {
-    margin: 20px 0 7px;
-
-    font-size: 26px;
-}
-
-.login p {
-    margin: 0 0 25px;
-
-    color: #858597;
-
-    font-size: 14px;
-}
-
-.password {
-    width: 100%;
-
-    padding: 14px 16px;
-
-    border: 1px solid #2a2a3a;
-
-    border-radius: 12px;
-
-    background: #0d0d15;
-
-    color: white;
-
-    outline: none;
-
-    font-size: 15px;
-}
-
-.password:focus {
-    border-color: #8b5cf6;
-
-    box-shadow:
-        0 0 0 3px rgba(139,92,246,.12);
-}
-
-.connect {
-    width: 100%;
-
-    margin-top: 13px;
-
-    padding: 14px;
-
-    border: 0;
-
-    border-radius: 12px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #7c3aed,
-            #9333ea
-        );
-
-    color: white;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition: .2s;
-}
-
-.connect:hover {
-    transform: translateY(-1px);
-
-    box-shadow:
-        0 10px 30px rgba(124,58,237,.3);
-}
-
-.error {
-    color: #fb7185;
-
-    margin-top: 12px;
-
-    font-size: 13px;
-
-    display: none;
-}
-
-/* APP */
-
-.app {
-    width: 100%;
-    height: 100%;
-
-    display: flex;
-}
-
-/* SIDEBAR */
-
-.sidebar {
-    width: 235px;
-
-    flex-shrink: 0;
-
-    background:
-        linear-gradient(
-            180deg,
-            #0c0c13,
-            #09090e
-        );
-
-    border-right: 1px solid #1b1b27;
-
-    display: flex;
-    flex-direction: column;
-
-    padding: 20px 14px;
-}
-
-.brand {
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    padding: 7px 10px 24px;
-}
-
-.brand-icon {
-    width: 40px;
-    height: 40px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 11px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #7c3aed,
-            #a855f7
-        );
-
-    font-size: 19px;
-}
-
-.brand-title {
-    font-weight: 800;
-}
-
-.brand-sub {
-    font-size: 11px;
-
-    color: #666679;
-
-    margin-top: 2px;
-}
-
-.nav-title {
-    padding: 15px 11px 8px;
-
-    font-size: 10px;
-
-    color: #555566;
-
-    text-transform: uppercase;
-
-    letter-spacing: 1.5px;
-}
-
-.nav-item {
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
-
-    padding: 11px;
-
-    margin-bottom: 4px;
-
-    color: #878797;
-
-    border-radius: 9px;
-
-    font-size: 13px;
-
-    cursor: pointer;
-}
-
-.nav-item.active {
-    color: white;
-
-    background:
-        rgba(124,58,237,.13);
-
-    border:
-        1px solid rgba(124,58,237,.18);
-}
-
-.nav-item:hover {
-    background: rgba(255,255,255,.04);
-
-    color: white;
-}
-
-.sidebar-bottom {
-    margin-top: auto;
-}
-
-.server-status {
-    padding: 13px;
-
-    border-radius: 12px;
-
-    background: #101019;
-
-    border: 1px solid #1c1c29;
-}
-
-.status-row {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    font-size: 11px;
-
-    color: #777789;
-}
-
-.online {
-    color: #4ade80;
-}
-
-.dot {
-    width: 7px;
-    height: 7px;
-
-    display: inline-block;
-
-    border-radius: 50%;
-
-    background: #4ade80;
-
-    box-shadow:
-        0 0 10px #4ade80;
-}
-
-/* MAIN */
-
-.main {
-    min-width: 0;
-
-    flex: 1;
-
-    display: flex;
-    flex-direction: column;
-
-    background:
-        radial-gradient(
-            circle at 70% 0%,
-            rgba(124,58,237,.07),
-            transparent 30%
-        ),
-        #09090f;
-}
-
-/* HEADER */
-
-.header {
-    height: 65px;
-
-    flex-shrink: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    padding: 0 20px;
-
-    border-bottom: 1px solid #1b1b27;
-
-    background:
-        rgba(10,10,16,.8);
-
-    backdrop-filter: blur(15px);
-}
-
-.header-left {
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-}
-
-.menu {
-    display: none;
-
-    border: 0;
-
-    background: transparent;
-
-    color: white;
-
-    font-size: 21px;
-}
-
-.server-name {
-    font-size: 14px;
-
-    font-weight: 700;
-}
-
-.server-path {
-    color: #666678;
-
-    font-size: 11px;
-
-    margin-top: 3px;
-}
-
-.header-right {
-    display: flex;
-
-    align-items: center;
-
-    gap: 15px;
-}
-
-.connection {
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    padding: 7px 10px;
-
-    border-radius: 8px;
-
-    background: rgba(74,222,128,.06);
-
-    color: #4ade80;
-
-    font-size: 11px;
-}
-
-.icon-button {
-    width: 34px;
-    height: 34px;
-
-    border: 1px solid #252532;
-
-    background: #11111a;
-
-    border-radius: 8px;
-
-    color: #8b8b9d;
-
-    cursor: pointer;
-}
-
-/* TERMINAL */
-
-.terminal-area {
-    flex: 1;
-
-    min-height: 0;
-
-    padding: 15px;
-}
-
-.terminal-card {
-    width: 100%;
-    height: 100%;
-
-    overflow: hidden;
-
-    border-radius: 13px;
-
-    border: 1px solid #222230;
-
-    background: #08080d;
-
-    box-shadow:
-        0 20px 70px rgba(0,0,0,.3);
-}
-
-.terminal-top {
-    height: 38px;
-
-    display: flex;
-
-    align-items: center;
-
-    padding: 0 13px;
-
-    gap: 7px;
-
-    background: #101019;
-
-    border-bottom: 1px solid #1d1d29;
-}
-
-.window-dot {
-    width: 9px;
-    height: 9px;
-
-    border-radius: 50%;
-}
-
-.red {
-    background: #fb7185;
-}
-
-.yellow {
-    background: #fbbf24;
-}
-
-.green {
-    background: #4ade80;
-}
-
-.terminal-title {
-    margin-left: 7px;
-
-    color: #68687b;
-
-    font-size: 11px;
-}
-
-#terminal {
-    width: 100%;
-    height: calc(100% - 38px);
-
-    padding: 10px;
-}
-
-/* MOBILE */
-
-@media(max-width: 700px) {
-
-    .sidebar {
-        position: fixed;
-
-        left: -250px;
-
-        top: 0;
-        bottom: 0;
-
-        z-index: 50;
-
-        transition: .25s;
-    }
-
-    .sidebar.open {
-        left: 0;
-    }
-
-    .menu {
-        display: block;
-    }
-
-    .header {
-        padding: 0 12px;
-    }
-
-    .connection {
-        padding: 6px 8px;
-    }
-
-    .connection span {
-        display: none;
-    }
-
-    .terminal-area {
-        padding: 8px;
-    }
-
-    .terminal-card {
-        border-radius: 9px;
-    }
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twin Terminal</title>
+    <!-- xterm.js for terminal -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            padding: 16px 0;
+            flex-shrink: 0;
+        }
+        .sidebar .brand {
+            padding: 0 16px 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #58a6ff;
+            border-bottom: 1px solid #30363d;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar .brand span {
+            font-size: 22px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            color: #8b949e;
+            transition: background 0.2s, color 0.2s;
+            border-left: 3px solid transparent;
+            font-size: 14px;
+        }
+        .nav-item:hover {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+        .nav-item.active {
+            background: #1f6feb22;
+            color: #58a6ff;
+            border-left-color: #58a6ff;
+        }
+        .nav-item i {
+            font-style: normal;
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+        /* Main area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .header {
+            padding: 10px 20px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .header .title {
+            color: #8b949e;
+        }
+        .header .status {
+            color: #3fb950;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header .status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #3fb950;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        /* Terminal container */
+        #terminal-container {
+            flex: 1;
+            padding: 8px;
+            background: #0d1117;
+        }
+        /* Panels (Files, Settings) */
+        .panel {
+            display: none;
+            flex: 1;
+            padding: 24px;
+            background: #0d1117;
+            overflow-y: auto;
+        }
+        .panel.active {
+            display: block;
+        }
+        .panel h2 {
+            color: #58a6ff;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        .panel p {
+            color: #8b949e;
+            line-height: 1.6;
+        }
+        /* Stats bar */
+        .stats-bar {
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            padding: 6px 20px;
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            color: #8b949e;
+            flex-shrink: 0;
+        }
+        .stats-bar .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .stats-bar .stat .label {
+            color: #6e7681;
+        }
+        .stats-bar .stat .value {
+            color: #c9d1d9;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+        .stats-bar .stat .value.cpu { color: #58a6ff; }
+        .stats-bar .stat .value.mem { color: #3fb950; }
+        .stats-bar .stat .value.net { color: #d29922; }
+    </style>
 </head>
-
 <body>
-
-<!-- LOGIN -->
-
-<div class="login" id="login">
-
-    <div class="login-box">
-
-        <div class="logo">
-            ⚡
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand">
+            <span>⚡</span> Twin Terminal
         </div>
-
-        <h1>Twin Terminal</h1>
-
-        <p>
-            Secure web terminal for your Linux container.
-        </p>
-
-        <input
-            id="password"
-            class="password"
-            type="password"
-            placeholder="Enter terminal password"
-            autocomplete="current-password"
-        >
-
-        <button
-            class="connect"
-            onclick="connect()"
-        >
-            Connect to Terminal
-        </button>
-
-        <div
-            class="error"
-            id="error"
-        >
-            Invalid password
+        <div class="nav-item active" data-panel="terminal">
+            <i>⌘</i> Terminal
         </div>
-
+        <div class="nav-item" data-panel="files">
+            <i>◈</i> Files
+        </div>
+        <div class="nav-item" data-panel="settings">
+            <i>⚙</i> Settings
+        </div>
     </div>
 
-</div>
-
-
-<!-- APPLICATION -->
-
-<div class="app">
-
-    <aside
-        class="sidebar"
-        id="sidebar"
-    >
-
-        <div class="brand">
-
-            <div class="brand-icon">
-                ⚡
-            </div>
-
-            <div>
-
-                <div class="brand-title">
-                    Twin Terminal
-                </div>
-
-                <div class="brand-sub">
-                    Web Linux Environment
-                </div>
-
-            </div>
-
+    <!-- Main content -->
+    <div class="main">
+        <div class="header">
+            <div class="title">Web Linux Environment</div>
+            <div class="status">Online</div>
         </div>
 
+        <!-- Terminal -->
+        <div id="terminal-container"></div>
 
-        <div class="nav-title">
-            Workspace
+        <!-- Files panel -->
+        <div id="panel-files" class="panel">
+            <h2>📁 File Manager</h2>
+            <p>File management is under development. You can use the terminal to browse and manage files.</p>
+            <p style="margin-top: 12px; color: #6e7681;">Current working directory: <code>/data</code></p>
         </div>
 
-        <div class="nav-item active">
-            <span>⌘</span>
-            Terminal
+        <!-- Settings panel -->
+        <div id="panel-settings" class="panel">
+            <h2>⚙️ Settings</h2>
+            <p>Configuration options will be available here soon.</p>
+            <p style="margin-top: 12px; color: #6e7681;">Password and environment variables can be set via Docker.</p>
         </div>
 
-        <div class="nav-item">
-            <span>◈</span>
-            Files
-        </div>
-
-        <div class="nav-item">
-            <span>⚙</span>
-            Settings
-        </div>
-
-
-        <div class="sidebar-bottom">
-
-            <div class="server-status">
-
-                <div class="status-row">
-
-                    <span>Status</span>
-
-                    <span class="online">
-                        <span class="dot"></span>
-                        Online
-                    </span>
-
-                </div>
-
-                <br>
-
-                <div class="status-row">
-
-                    <span>Memory</span>
-
-                    <span id="memory">
-                        --
-                    </span>
-
-                </div>
-
-                <br>
-
-                <div class="status-row">
-
-                    <span>Load</span>
-
-                    <span id="cpu">
-                        --
-                    </span>
-
-                </div>
-
+        <!-- Stats bar -->
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="label">CPU</span>
+                <span class="value cpu" id="stat-cpu">--</span>
             </div>
-
+            <div class="stat">
+                <span class="label">RAM (available)</span>
+                <span class="value mem" id="stat-mem">--</span>
+            </div>
+            <div class="stat">
+                <span class="label">Traffic</span>
+                <span class="value net" id="stat-net">--</span>
+            </div>
         </div>
+    </div>
 
-    </aside>
+    <script>
+        // ── Terminal setup ──
+        const term = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace",
+            theme: {
+                background: '#0d1117',
+                foreground: '#c9d1d9',
+                cursor: '#58a6ff',
+                selectionBackground: '#264f78',
+                black: '#484f58',
+                red: '#ff7b72',
+                green: '#3fb950',
+                yellow: '#d29922',
+                blue: '#58a6ff',
+                magenta: '#bc8cff',
+                cyan: '#39c5cf',
+                white: '#b1bac4',
+                brightBlack: '#6e7681',
+                brightRed: '#ffa198',
+                brightGreen: '#56d364',
+                brightYellow: '#e3b341',
+                brightBlue: '#79c0ff',
+                brightMagenta: '#d2a8ff',
+                brightCyan: '#56d4dd',
+                brightWhite: '#f0f6fc'
+            }
+        });
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(document.getElementById('terminal-container'));
+        fitAddon.fit();
 
+        // ── WebSocket connection ──
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        let authenticated = false;
 
-    <main class="main">
+        ws.onopen = () => {
+            // Send auth (password from prompt or default)
+            const password = prompt('Enter password:') || 'changeme';
+            ws.send(JSON.stringify({ type: 'auth', password }));
+        };
 
-        <header class="header">
-
-            <div class="header-left">
-
-                <button
-                    class="menu"
-                    onclick="toggleSidebar()"
-                >
-                    ☰
-                </button>
-
-                <div>
-
-                    <div class="server-name">
-                        Twin Linux
-                    </div>
-
-                    <div class="server-path">
-                        /data
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="header-right">
-
-                <div class="connection">
-
-                    <span class="dot"></span>
-
-                    <span>
-                        Connected
-                    </span>
-
-                </div>
-
-                <button
-                    class="icon-button"
-                    onclick="clearTerminal()"
-                >
-                    ⌫
-                </button>
-
-            </div>
-
-        </header>
-
-
-        <section class="terminal-area">
-
-            <div class="terminal-card">
-
-                <div class="terminal-top">
-
-                    <div class="window-dot red"></div>
-                    <div class="window-dot yellow"></div>
-                    <div class="window-dot green"></div>
-
-                    <div class="terminal-title">
-                        root@twin: /data
-                    </div>
-
-                </div>
-
-                <div id="terminal"></div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-</div>
-
-
-<script>
-
-let term;
-let socket;
-let fitAddon;
-
-function connect() {
-
-    const password =
-        document.getElementById("password").value;
-
-    if (!password) {
-        return;
-    }
-
-    const protocol =
-        location.protocol === "https:"
-            ? "wss:"
-            : "ws:";
-
-    socket = new WebSocket(
-        protocol +
-        "//" +
-        location.host +
-        "/ws"
-    );
-
-    socket.onopen = () => {
-
-        socket.send(
-            JSON.stringify({
-                type: "auth",
-                password: password
-            })
-        );
-
-    };
-
-    socket.onmessage = (event) => {
-
-        if (typeof event.data === "string") {
-
-            try {
-
-                const message =
-                    JSON.parse(event.data);
-
-                if (
-                    message.type === "auth"
-                ) {
-
-                    if (
-                        message.success
-                    ) {
-
-                        document
-                            .getElementById("login")
-                            .style.display = "none";
-
-                        startTerminal(password);
-
-                    } else {
-
-                        showError();
-
+        ws.onmessage = (event) => {
+            if (typeof event.data === 'string') {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'auth') {
+                        if (msg.success) {
+                            authenticated = true;
+                            term.writeln('\x1b[32m✓ Authenticated\x1b[0m');
+                            term.writeln('\x1b[90mWelcome to Twin Terminal\x1b[0m\r\n');
+                        } else {
+                            term.writeln('\x1b[31m✗ Invalid password\x1b[0m');
+                        }
                     }
+                } catch (e) { /* ignore */ }
+            } else {
+                // Binary data = terminal output
+                const reader = new FileReader();
+                reader.onload = () => {
+                    term.write(new Uint8Array(reader.result));
+                };
+                reader.readAsArrayBuffer(event.data);
+            }
+        };
 
+        ws.onclose = () => {
+            term.writeln('\r\n\x1b[31mConnection closed.\x1b[0m');
+        };
+
+        // ── Terminal input ──
+        term.onData((data) => {
+            if (authenticated && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'input', data }));
+            }
+        });
+
+        // ── Resize handling ──
+        window.addEventListener('resize', () => {
+            fitAddon.fit();
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'resize',
+                    rows: term.rows,
+                    cols: term.cols
+                }));
+            }
+        });
+
+        // ── Panel switching ──
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Update active nav
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+
+                const panel = item.dataset.panel;
+                // Hide all panels
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                document.getElementById('terminal-container').style.display = 'none';
+
+                if (panel === 'terminal') {
+                    document.getElementById('terminal-container').style.display = 'block';
+                    fitAddon.fit();
+                } else {
+                    const panelEl = document.getElementById(`panel-${panel}`);
+                    if (panelEl) panelEl.classList.add('active');
                 }
+            });
+        });
 
-            } catch {
-
-                term?.write(event.data);
-
+        // ── Stats polling ──
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('stat-cpu').textContent = data.cpu || '--';
+                document.getElementById('stat-mem').textContent = data.memory_available || '--';
+                document.getElementById('stat-net').textContent = data.traffic_gb || '--';
+            } catch (e) {
+                console.warn('Stats fetch failed:', e);
             }
-
-        } else {
-
-            const reader =
-                new FileReader();
-
-            reader.onload = () => {
-
-                term.write(
-                    new Uint8Array(
-                        reader.result
-                    )
-                );
-
-            };
-
-            reader.readAsArrayBuffer(
-                event.data
-            );
-
         }
-
-    };
-
-    socket.onclose = () => {
-
-        if (term) {
-
-            term.write(
-                "\r\n\x1b[31mConnection closed.\x1b[0m\r\n"
-            );
-
-        }
-
-    };
-
-}
-
-
-function startTerminal(password) {
-
-    term = new Terminal({
-
-        cursorBlink: true,
-
-        cursorStyle: "block",
-
-        fontFamily:
-            "'JetBrains Mono', 'Fira Code', monospace",
-
-        fontSize: 14,
-
-        lineHeight: 1.2,
-
-        theme: {
-
-            background: "#08080d",
-
-            foreground: "#e6e6f0",
-
-            cursor: "#a855f7",
-
-            cursorAccent: "#08080d",
-
-            selectionBackground:
-                "rgba(168,85,247,.28)",
-
-            black: "#101018",
-
-            red: "#fb7185",
-
-            green: "#4ade80",
-
-            yellow: "#facc15",
-
-            blue: "#60a5fa",
-
-            magenta: "#c084fc",
-
-            cyan: "#22d3ee",
-
-            white: "#f4f4f5",
-
-            brightBlack: "#52525b",
-
-            brightRed: "#fb7185",
-
-            brightGreen: "#86efac",
-
-            brightYellow: "#fde68a",
-
-            brightBlue: "#93c5fd",
-
-            brightMagenta: "#d8b4fe",
-
-            brightCyan: "#67e8f9",
-
-            brightWhite: "#ffffff"
-
-        }
-
-    });
-
-    fitAddon =
-        new FitAddon.FitAddon();
-
-    term.loadAddon(fitAddon);
-
-    term.open(
-        document.getElementById("terminal")
-    );
-
-    fitAddon.fit();
-
-    term.write(
-        "\x1b[1;35m"
-        + "\r\n"
-        + "  ⚡ Twin Terminal"
-        + "\r\n"
-        + "\x1b[0m"
-        + "\x1b[90m"
-        + "  Secure Linux Web Terminal"
-        + "\r\n"
-        + "  Connected successfully."
-        + "\r\n\r\n"
-        + "\x1b[0m"
-    );
-
-    term.onData((data) => {
-
-        socket.send(
-            JSON.stringify({
-                type: "input",
-                data: data
-            })
-        );
-
-    });
-
-    resizeTerminal();
-
-    term.focus();
-
-}
-
-
-function resizeTerminal() {
-
-    if (!fitAddon || !term) {
-        return;
-    }
-
-    fitAddon.fit();
-
-    if (socket?.readyState === WebSocket.OPEN) {
-
-        socket.send(
-            JSON.stringify({
-                type: "resize",
-
-                rows: term.rows,
-
-                cols: term.cols
-            })
-        );
-
-    }
-
-}
-
-
-function clearTerminal() {
-
-    if (term) {
-        term.clear();
-        term.focus();
-    }
-
-}
-
-
-function toggleSidebar() {
-
-    document
-        .getElementById("sidebar")
-        .classList.toggle("open");
-
-}
-
-
-function showError() {
-
-    document
-        .getElementById("error")
-        .style.display = "block";
-
-}
-
-
-window.addEventListener(
-    "resize",
-    resizeTerminal
-);
-
-
-document
-    .getElementById("password")
-    .addEventListener(
-        "keydown",
-        (event) => {
-
-            if (event.key === "Enter") {
-                connect();
-            }
-
-        }
-    );
-
-
-async function updateStats() {
-
-    try {
-
-        const response =
-            await fetch("/api/stats");
-
-        const data =
-            await response.json();
-
-        document
-            .getElementById("memory")
-            .textContent = data.memory;
-
-        document
-            .getElementById("cpu")
-            .textContent = data.cpu;
-
-    } catch {}
-
-}
-
-
-setInterval(
-    updateStats,
-    5000
-);
-
-updateStats();
-
-</script>
-
+        fetchStats();
+        setInterval(fetchStats, 2000);
+    </script>
 </body>
 </html>
