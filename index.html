@@ -1,906 +1,1153 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twin Terminal</title>
-    <link rel="icon" href="/favicon.ico">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
-    <style>
-        :root {
-            --bg: #0d1117;
-            --bg-alt: #161b22;
-            --bg-hover: #21262d;
-            --border: #30363d;
-            --text: #c9d1d9;
-            --text-dim: #8b949e;
-            --text-mute: #6e7681;
-            --accent: #58a6ff;
-            --green: #3fb950;
-            --yellow: #d29922;
-            --red: #f85149;
-            --purple: #bc8cff;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { height: 100%; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
 
-        /* ── Sidebar ── */
-        .sidebar {
-            width: 220px;
-            background: var(--bg-alt);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-            padding: 12px 0;
-        }
-        .brand {
-            padding: 8px 16px 16px;
-            font-size: 17px;
-            font-weight: 600;
-            color: var(--accent);
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            letter-spacing: 0.3px;
-        }
-        .brand .logo { font-size: 22px; }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 16px;
-            cursor: pointer;
-            color: var(--text-dim);
-            transition: background 0.15s, color 0.15s;
-            border-left: 3px solid transparent;
-            font-size: 14px;
-            user-select: none;
-        }
-        .nav-item:hover { background: var(--bg-hover); color: var(--text); }
-        .nav-item.active {
-            background: rgba(88, 166, 255, 0.1);
-            color: var(--accent);
-            border-left-color: var(--accent);
-        }
-        .nav-item .icon {
-            font-size: 17px;
-            width: 22px;
-            text-align: center;
-            display: inline-block;
-        }
-        .sidebar-footer {
-            margin-top: auto;
-            padding: 12px 16px;
-            font-size: 11px;
-            color: var(--text-mute);
-            border-top: 1px solid var(--border);
-        }
-        .sidebar-footer .dot {
-            display: inline-block;
-            width: 8px; height: 8px;
-            background: var(--green);
-            border-radius: 50%;
-            margin-right: 6px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
+<meta charset="UTF-8">
 
-        /* ── Main ── */
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-        .header {
-            padding: 10px 20px;
-            background: var(--bg-alt);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            flex-shrink: 0;
-        }
-        .header .title { color: var(--text-dim); }
-        .header .title strong { color: var(--text); font-weight: 500; }
-        .header .actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .btn {
-            background: var(--bg-hover);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background 0.15s, border-color 0.15s;
-        }
-        .btn:hover { background: #2d333b; border-color: #444c56; }
-        .btn.primary { background: #238636; border-color: #2ea043; }
-        .btn.primary:hover { background: #2ea043; }
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-        /* ── Panels ── */
-        .content { flex: 1; position: relative; overflow: hidden; }
-        .panel {
-            display: none;
-            position: absolute;
-            inset: 0;
-            background: var(--bg);
-            overflow-y: auto;
-            padding: 24px;
-        }
-        .panel.active { display: block; }
-        #terminal-container.panel.active {
-            padding: 8px;
-            overflow: hidden;
-        }
+<title>Twin Terminal</title>
 
-        /* ── Files panel ── */
-        .file-toolbar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            align-items: center;
-        }
-        .file-path {
-            flex: 1;
-            background: var(--bg-alt);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-family: 'Cascadia Code', 'Fira Code', monospace;
-            font-size: 13px;
-        }
-        .file-list {
-            background: var(--bg-alt);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .file-row {
-            display: flex;
-            align-items: center;
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 13px;
-            gap: 12px;
-            transition: background 0.1s;
-        }
-        .file-row:last-child { border-bottom: none; }
-        .file-row:hover { background: var(--bg-hover); }
-        .file-row .f-icon {
-            font-size: 16px;
-            width: 20px;
-            text-align: center;
-        }
-        .file-row .f-name { flex: 1; }
-        .file-row .f-size { color: var(--text-mute); font-variant-numeric: tabular-nums; font-size: 12px; }
-        .file-row .f-date { color: var(--text-mute); font-size: 12px; width: 140px; text-align: right; }
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"
+>
 
-        /* ── Settings panel ── */
-        .settings-group {
-            background: var(--bg-alt);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px 20px;
-            margin-bottom: 16px;
-            max-width: 720px;
-        }
-        .settings-group h3 {
-            font-size: 14px;
-            color: var(--accent);
-            margin-bottom: 14px;
-            font-weight: 500;
-        }
-        .setting-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-        }
-        .setting-row:last-child { border-bottom: none; }
-        .setting-row label { color: var(--text-dim); }
-        .setting-row input[type="number"],
-        .setting-row input[type="text"],
-        .setting-row select {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            min-width: 180px;
-        }
-        .setting-row input[type="checkbox"] {
-            width: 18px; height: 18px;
-            accent-color: var(--accent);
-        }
+<script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
 
-        /* ── Stats bar ── */
-        .stats-bar {
-            background: var(--bg-alt);
-            border-top: 1px solid var(--border);
-            padding: 8px 20px;
-            display: flex;
-            gap: 28px;
-            font-size: 12px;
-            color: var(--text-dim);
-            flex-shrink: 0;
-            flex-wrap: wrap;
-        }
-        .stat {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .stat .label {
-            color: var(--text-mute);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .stat .value {
-            color: var(--text);
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-            font-family: 'Cascadia Code', monospace;
-        }
-        .stat .value.cpu { color: var(--accent); }
-        .stat .value.mem { color: var(--green); }
-        .stat .value.net { color: var(--yellow); }
-        .stat .bar {
-            width: 60px; height: 4px;
-            background: var(--bg-hover);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .stat .bar > span {
-            display: block;
-            height: 100%;
-            background: var(--accent);
-            transition: width 0.3s ease;
-        }
-        .stat .bar.mem > span { background: var(--green); }
-        .stat .bar.net > span { background: var(--yellow); }
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
 
-        /* ── Login overlay ── */
-        .login-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(13, 17, 23, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        }
-        .login-overlay.hidden { display: none; }
-        .login-box {
-            background: var(--bg-alt);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            width: 380px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        }
-        .login-box h1 {
-            color: var(--accent);
-            font-size: 22px;
-            margin-bottom: 6px;
-            text-align: center;
-        }
-        .login-box p {
-            color: var(--text-mute);
-            text-align: center;
-            margin-bottom: 24px;
-            font-size: 13px;
-        }
-        .login-box input {
-            width: 100%;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 14px;
-            outline: none;
-        }
-        .login-box input:focus { border-color: var(--accent); }
-        .login-box button {
-            width: 100%;
-            background: var(--accent);
-            color: var(--bg);
-            border: none;
-            padding: 11px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        .login-box button:hover { background: #79b8ff; }
-        .login-box .error {
-            color: var(--red);
-            font-size: 12px;
-            text-align: center;
-            min-height: 16px;
-            margin-bottom: 8px;
-        }
+<style>
 
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: #444c56; }
-    </style>
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: #08080d;
+    color: #ffffff;
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+body {
+    display: flex;
+}
+
+/* LOGIN */
+
+.login {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle at 50% 20%,
+            rgba(124,58,237,.18),
+            transparent 40%
+        ),
+        #08080d;
+
+    z-index: 100;
+}
+
+.login-box {
+    width: min(420px, calc(100% - 32px));
+
+    padding: 34px;
+
+    background:
+        rgba(18,18,28,.88);
+
+    border: 1px solid rgba(168,85,247,.25);
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 30px 100px rgba(0,0,0,.65),
+        0 0 60px rgba(124,58,237,.08);
+
+    backdrop-filter: blur(20px);
+}
+
+.logo {
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #a855f7
+        );
+
+    font-size: 27px;
+
+    box-shadow:
+        0 10px 35px rgba(124,58,237,.35);
+}
+
+.login h1 {
+    margin: 20px 0 7px;
+
+    font-size: 26px;
+}
+
+.login p {
+    margin: 0 0 25px;
+
+    color: #858597;
+
+    font-size: 14px;
+}
+
+.password {
+    width: 100%;
+
+    padding: 14px 16px;
+
+    border: 1px solid #2a2a3a;
+
+    border-radius: 12px;
+
+    background: #0d0d15;
+
+    color: white;
+
+    outline: none;
+
+    font-size: 15px;
+}
+
+.password:focus {
+    border-color: #8b5cf6;
+
+    box-shadow:
+        0 0 0 3px rgba(139,92,246,.12);
+}
+
+.connect {
+    width: 100%;
+
+    margin-top: 13px;
+
+    padding: 14px;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #9333ea
+        );
+
+    color: white;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.connect:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 10px 30px rgba(124,58,237,.3);
+}
+
+.error {
+    color: #fb7185;
+
+    margin-top: 12px;
+
+    font-size: 13px;
+
+    display: none;
+}
+
+/* APP */
+
+.app {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    width: 235px;
+
+    flex-shrink: 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            #0c0c13,
+            #09090e
+        );
+
+    border-right: 1px solid #1b1b27;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 20px 14px;
+}
+
+.brand {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 7px 10px 24px;
+}
+
+.brand-icon {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #a855f7
+        );
+
+    font-size: 19px;
+}
+
+.brand-title {
+    font-weight: 800;
+}
+
+.brand-sub {
+    font-size: 11px;
+
+    color: #666679;
+
+    margin-top: 2px;
+}
+
+.nav-title {
+    padding: 15px 11px 8px;
+
+    font-size: 10px;
+
+    color: #555566;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1.5px;
+}
+
+.nav-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 11px;
+
+    margin-bottom: 4px;
+
+    color: #878797;
+
+    border-radius: 9px;
+
+    font-size: 13px;
+
+    cursor: pointer;
+}
+
+.nav-item.active {
+    color: white;
+
+    background:
+        rgba(124,58,237,.13);
+
+    border:
+        1px solid rgba(124,58,237,.18);
+}
+
+.nav-item:hover {
+    background: rgba(255,255,255,.04);
+
+    color: white;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+}
+
+.server-status {
+    padding: 13px;
+
+    border-radius: 12px;
+
+    background: #101019;
+
+    border: 1px solid #1c1c29;
+}
+
+.status-row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    font-size: 11px;
+
+    color: #777789;
+}
+
+.online {
+    color: #4ade80;
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+
+    display: inline-block;
+
+    border-radius: 50%;
+
+    background: #4ade80;
+
+    box-shadow:
+        0 0 10px #4ade80;
+}
+
+/* MAIN */
+
+.main {
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    background:
+        radial-gradient(
+            circle at 70% 0%,
+            rgba(124,58,237,.07),
+            transparent 30%
+        ),
+        #09090f;
+}
+
+/* HEADER */
+
+.header {
+    height: 65px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 20px;
+
+    border-bottom: 1px solid #1b1b27;
+
+    background:
+        rgba(10,10,16,.8);
+
+    backdrop-filter: blur(15px);
+}
+
+.header-left {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+.menu {
+    display: none;
+
+    border: 0;
+
+    background: transparent;
+
+    color: white;
+
+    font-size: 21px;
+}
+
+.server-name {
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+.server-path {
+    color: #666678;
+
+    font-size: 11px;
+
+    margin-top: 3px;
+}
+
+.header-right {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+}
+
+.connection {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 7px 10px;
+
+    border-radius: 8px;
+
+    background: rgba(74,222,128,.06);
+
+    color: #4ade80;
+
+    font-size: 11px;
+}
+
+.icon-button {
+    width: 34px;
+    height: 34px;
+
+    border: 1px solid #252532;
+
+    background: #11111a;
+
+    border-radius: 8px;
+
+    color: #8b8b9d;
+
+    cursor: pointer;
+}
+
+/* TERMINAL */
+
+.terminal-area {
+    flex: 1;
+
+    min-height: 0;
+
+    padding: 15px;
+}
+
+.terminal-card {
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    border-radius: 13px;
+
+    border: 1px solid #222230;
+
+    background: #08080d;
+
+    box-shadow:
+        0 20px 70px rgba(0,0,0,.3);
+}
+
+.terminal-top {
+    height: 38px;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 13px;
+
+    gap: 7px;
+
+    background: #101019;
+
+    border-bottom: 1px solid #1d1d29;
+}
+
+.window-dot {
+    width: 9px;
+    height: 9px;
+
+    border-radius: 50%;
+}
+
+.red {
+    background: #fb7185;
+}
+
+.yellow {
+    background: #fbbf24;
+}
+
+.green {
+    background: #4ade80;
+}
+
+.terminal-title {
+    margin-left: 7px;
+
+    color: #68687b;
+
+    font-size: 11px;
+}
+
+#terminal {
+    width: 100%;
+    height: calc(100% - 38px);
+
+    padding: 10px;
+}
+
+/* MOBILE */
+
+@media(max-width: 700px) {
+
+    .sidebar {
+        position: fixed;
+
+        left: -250px;
+
+        top: 0;
+        bottom: 0;
+
+        z-index: 50;
+
+        transition: .25s;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .menu {
+        display: block;
+    }
+
+    .header {
+        padding: 0 12px;
+    }
+
+    .connection {
+        padding: 6px 8px;
+    }
+
+    .connection span {
+        display: none;
+    }
+
+    .terminal-area {
+        padding: 8px;
+    }
+
+    .terminal-card {
+        border-radius: 9px;
+    }
+
+}
+
+</style>
+
 </head>
+
 <body>
 
-    <!-- Login overlay -->
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-box">
-            <h1>⚡ Twin Terminal</h1>
-            <p>Enter your password to continue</p>
-            <div class="error" id="loginError"></div>
-            <input type="password" id="loginPassword" placeholder="Password" autofocus />
-            <button id="loginButton">Connect</button>
+<!-- LOGIN -->
+
+<div class="login" id="login">
+
+    <div class="login-box">
+
+        <div class="logo">
+            ⚡
         </div>
+
+        <h1>Twin Terminal</h1>
+
+        <p>
+            Secure web terminal for your Linux container.
+        </p>
+
+        <input
+            id="password"
+            class="password"
+            type="password"
+            placeholder="Enter terminal password"
+            autocomplete="current-password"
+        >
+
+        <button
+            class="connect"
+            onclick="connect()"
+        >
+            Connect to Terminal
+        </button>
+
+        <div
+            class="error"
+            id="error"
+        >
+            Invalid password
+        </div>
+
     </div>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
+</div>
+
+
+<!-- APPLICATION -->
+
+<div class="app">
+
+    <aside
+        class="sidebar"
+        id="sidebar"
+    >
+
         <div class="brand">
-            <span class="logo">⚡</span>
-            <span>Twin Terminal</span>
+
+            <div class="brand-icon">
+                ⚡
+            </div>
+
+            <div>
+
+                <div class="brand-title">
+                    Twin Terminal
+                </div>
+
+                <div class="brand-sub">
+                    Web Linux Environment
+                </div>
+
+            </div>
+
         </div>
-        <div class="nav-item active" data-panel="terminal">
-            <span class="icon">▸</span> Terminal
+
+
+        <div class="nav-title">
+            Workspace
         </div>
-        <div class="nav-item" data-panel="files">
-            <span class="icon">▤</span> Files
+
+        <div class="nav-item active">
+            <span>⌘</span>
+            Terminal
         </div>
-        <div class="nav-item" data-panel="settings">
-            <span class="icon">⚙</span> Settings
+
+        <div class="nav-item">
+            <span>◈</span>
+            Files
         </div>
-        <div class="sidebar-footer">
-            <span class="dot"></span>
-            <span id="footer-status">Connecting…</span>
+
+        <div class="nav-item">
+            <span>⚙</span>
+            Settings
         </div>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="server-status">
+
+                <div class="status-row">
+
+                    <span>Status</span>
+
+                    <span class="online">
+                        <span class="dot"></span>
+                        Online
+                    </span>
+
+                </div>
+
+                <br>
+
+                <div class="status-row">
+
+                    <span>Memory</span>
+
+                    <span id="memory">
+                        --
+                    </span>
+
+                </div>
+
+                <br>
+
+                <div class="status-row">
+
+                    <span>Load</span>
+
+                    <span id="cpu">
+                        --
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </aside>
 
-    <!-- Main -->
-    <div class="main">
-        <div class="header">
-            <div class="title">
-                <strong>Web Linux Environment</strong> — session #<span id="session-id">1</span>
-            </div>
-            <div class="actions">
-                <button class="btn" id="clearBtn">Clear</button>
-                <button class="btn" id="reconnectBtn">Reconnect</button>
-            </div>
-        </div>
 
-        <div class="content">
-            <!-- Terminal -->
-            <div id="terminal-container" class="panel active"></div>
+    <main class="main">
 
-            <!-- Files -->
-            <div id="files-panel" class="panel">
-                <div class="file-toolbar">
-                    <input type="text" class="file-path" id="filePath" value="/data" readonly />
-                    <button class="btn" id="upBtn">↑ Up</button>
-                    <button class="btn" id="refreshBtn">↻ Refresh</button>
+        <header class="header">
+
+            <div class="header-left">
+
+                <button
+                    class="menu"
+                    onclick="toggleSidebar()"
+                >
+                    ☰
+                </button>
+
+                <div>
+
+                    <div class="server-name">
+                        Twin Linux
+                    </div>
+
+                    <div class="server-path">
+                        /data
+                    </div>
+
                 </div>
-                <div class="file-list" id="fileList">
-                    <div class="file-row"><span class="f-name" style="color: var(--text-mute);">Loading…</span></div>
+
+            </div>
+
+
+            <div class="header-right">
+
+                <div class="connection">
+
+                    <span class="dot"></span>
+
+                    <span>
+                        Connected
+                    </span>
+
                 </div>
+
+                <button
+                    class="icon-button"
+                    onclick="clearTerminal()"
+                >
+                    ⌫
+                </button>
+
             </div>
 
-            <!-- Settings -->
-            <div id="settings-panel" class="panel">
-                <div class="settings-group">
-                    <h3>Terminal Appearance</h3>
-                    <div class="setting-row">
-                        <label>Font Size</label>
-                        <input type="number" id="setFontSize" min="8" max="32" value="14" />
+        </header>
+
+
+        <section class="terminal-area">
+
+            <div class="terminal-card">
+
+                <div class="terminal-top">
+
+                    <div class="window-dot red"></div>
+                    <div class="window-dot yellow"></div>
+                    <div class="window-dot green"></div>
+
+                    <div class="terminal-title">
+                        root@twin: /data
                     </div>
-                    <div class="setting-row">
-                        <label>Font Family</label>
-                        <input type="text" id="setFontFamily" value="'Cascadia Code', 'Fira Code', monospace" />
-                    </div>
-                    <div class="setting-row">
-                        <label>Cursor Blink</label>
-                        <input type="checkbox" id="setCursorBlink" checked />
-                    </div>
-                    <div class="setting-row">
-                        <label>Scrollback Lines</label>
-                        <input type="number" id="setScrollback" min="100" max="100000" value="5000" />
-                    </div>
+
                 </div>
-                <div class="settings-group">
-                    <h3>Dashboard</h3>
-                    <div class="setting-row">
-                        <label>Stats Refresh (ms)</label>
-                        <input type="number" id="setStatsRefresh" min="500" max="10000" value="2000" />
-                    </div>
-                </div>
-                <div class="settings-group">
-                    <h3>System Information</h3>
-                    <div class="setting-row">
-                        <label>OS</label>
-                        <span id="sysOs">--</span>
-                    </div>
-                    <div class="setting-row">
-                        <label>Python</label>
-                        <span id="sysPy">--</span>
-                    </div>
-                    <div class="setting-row">
-                        <label>Uptime</label>
-                        <span id="sysUptime">--</span>
-                    </div>
-                    <div class="setting-row">
-                        <label>Active Sessions</label>
-                        <span id="sysSessions">--</span>
-                    </div>
-                </div>
-                <button class="btn primary" id="saveSettingsBtn">Save Settings</button>
-            </div>
-        </div>
 
-        <!-- Stats bar -->
-        <div class="stats-bar">
-            <div class="stat">
-                <span class="label">CPU</span>
-                <span class="value cpu" id="stat-cpu">--</span>
-                <div class="bar"><span id="bar-cpu" style="width: 0%"></span></div>
-            </div>
-            <div class="stat">
-                <span class="label">RAM (usable)</span>
-                <span class="value mem" id="stat-mem">--</span>
-                <div class="bar mem"><span id="bar-mem" style="width: 0%"></span></div>
-            </div>
-            <div class="stat">
-                <span class="label">Traffic</span>
-                <span class="value net" id="stat-net">--</span>
-                <div class="bar net"><span id="bar-net" style="width: 0%"></span></div>
-            </div>
-            <div class="stat">
-                <span class="label">Disk</span>
-                <span class="value" id="stat-disk">--</span>
-            </div>
-            <div class="stat">
-                <span class="label">Load</span>
-                <span class="value" id="stat-load">--</span>
-            </div>
-        </div>
-    </div>
+                <div id="terminal"></div>
 
-    <script>
-    (function () {
-        "use strict";
+            </div>
 
-        // ─────────────────────────────────────
-        // State
-        // ─────────────────────────────────────
-        const state = {
-            ws: null,
-            authenticated: false,
-            term: null,
-            fitAddon: null,
-            settings: {
-                fontSize: 14,
-                fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace",
-                cursorBlink: true,
-                scrollback: 5000,
-                statsRefreshMs: 2000,
-            },
-            statsTimer: null,
-            currentPath: "/data",
-        };
+        </section>
 
-        // ─────────────────────────────────────
-        // DOM helpers
-        // ─────────────────────────────────────
-        const $ = (id) => document.getElementById(id);
+    </main>
 
-        // ─────────────────────────────────────
-        // Stats polling
-        // ─────────────────────────────────────
-        async function fetchStats() {
+</div>
+
+
+<script>
+
+let term;
+let socket;
+let fitAddon;
+
+function connect() {
+
+    const password =
+        document.getElementById("password").value;
+
+    if (!password) {
+        return;
+    }
+
+    const protocol =
+        location.protocol === "https:"
+            ? "wss:"
+            : "ws:";
+
+    socket = new WebSocket(
+        protocol +
+        "//" +
+        location.host +
+        "/ws"
+    );
+
+    socket.onopen = () => {
+
+        socket.send(
+            JSON.stringify({
+                type: "auth",
+                password: password
+            })
+        );
+
+    };
+
+    socket.onmessage = (event) => {
+
+        if (typeof event.data === "string") {
+
             try {
-                const res = await fetch("/api/stats", { cache: "no-store" });
-                if (!res.ok) return;
-                const d = await res.json();
 
-                // CPU
-                const cpu = d.cpu.percent;
-                $("stat-cpu").textContent = cpu.toFixed(1) + "%";
-                $("bar-cpu").style.width = Math.min(100, cpu) + "%";
+                const message =
+                    JSON.parse(event.data);
 
-                // RAM — "usable" = available
-                const memAvail = d.memory.available_gb;
-                const memTotal = d.memory.total_gb;
-                $("stat-mem").textContent = memAvail.toFixed(2) + " / " + memTotal.toFixed(2) + " GB";
-                $("bar-mem").style.width = (100 - d.memory.percent) + "%";
+                if (
+                    message.type === "auth"
+                ) {
 
-                // Network — show traffic since boot, with 100 GB scale
-                const netTotal = d.network.total_gb;
-                $("stat-net").textContent = netTotal.toFixed(2) + " / 100 GB";
-                $("bar-net").style.width = Math.min(100, (netTotal / 100) * 100) + "%";
+                    if (
+                        message.success
+                    ) {
 
-                // Disk
-                $("stat-disk").textContent = d.disk.used_gb.toFixed(1) + " / " + d.disk.total_gb.toFixed(1) + " GB";
+                        document
+                            .getElementById("login")
+                            .style.display = "none";
 
-                // Load
-                $("stat-load").textContent = d.cpu.load1.toFixed(2);
+                        startTerminal(password);
 
-                // Settings panel system info
-                if ($("sysOs")) $("sysOs").textContent = d.system.os;
-                if ($("sysPy")) $("sysPy").textContent = d.system.python;
-                if ($("sysUptime")) $("sysUptime").textContent = d.system.uptime;
-                if ($("sysSessions")) $("sysSessions").textContent = d.sessions.active + " / " + d.sessions.max;
+                    } else {
 
-                $("footer-status").textContent = "Online";
-            } catch (e) {
-                console.warn("Stats fetch failed:", e);
-                $("footer-status").textContent = "Offline";
-            }
-        }
+                        showError();
 
-        function startStatsPolling() {
-            if (state.statsTimer) clearInterval(state.statsTimer);
-            fetchStats();
-            state.statsTimer = setInterval(fetchStats, state.settings.statsRefreshMs);
-        }
-
-        // ─────────────────────────────────────
-        // Terminal
-        // ─────────────────────────────────────
-        function buildTerminal() {
-            const term = new Terminal({
-                cursorBlink: state.settings.cursorBlink,
-                fontSize: state.settings.fontSize,
-                fontFamily: state.settings.fontFamily,
-                scrollback: state.settings.scrollback,
-                allowProposedApi: true,
-                theme: {
-                    background: "#0d1117",
-                    foreground: "#c9d1d9",
-                    cursor: "#58a6ff",
-                    cursorAccent: "#0d1117",
-                    selectionBackground: "#264f78",
-                    black: "#484f58",
-                    red: "#ff7b72",
-                    green: "#3fb950",
-                    yellow: "#d29922",
-                    blue: "#58a6ff",
-                    magenta: "#bc8cff",
-                    cyan: "#39c5cf",
-                    white: "#b1bac4",
-                    brightBlack: "#6e7681",
-                    brightRed: "#ffa198",
-                    brightGreen: "#56d364",
-                    brightYellow: "#e3b341",
-                    brightBlue: "#79c0ff",
-                    brightMagenta: "#d2a8ff",
-                    brightCyan: "#56d4dd",
-                    brightWhite: "#f0f6fc",
-                },
-            });
-            const fitAddon = new FitAddon.FitAddon();
-            term.loadAddon(fitAddon);
-            if (window.WebLinksAddon) {
-                term.loadAddon(new WebLinksAddon.WebLinksAddon());
-            }
-            term.open($("terminal-container"));
-            setTimeout(() => fitAddon.fit(), 50);
-
-            term.onData((data) => {
-                if (state.authenticated && state.ws && state.ws.readyState === WebSocket.OPEN) {
-                    state.ws.send(JSON.stringify({ type: "input", data }));
-                }
-            });
-
-            term.onResize(({ rows, cols }) => {
-                if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-                    state.ws.send(JSON.stringify({ type: "resize", rows, cols }));
-                }
-            });
-
-            state.term = term;
-            state.fitAddon = fitAddon;
-        }
-
-        // ─────────────────────────────────────
-        // WebSocket
-        // ─────────────────────────────────────
-        function connect(password) {
-            if (state.ws) {
-                try { state.ws.close(); } catch (e) {}
-            }
-            const proto = location.protocol === "https:" ? "wss:" : "ws:";
-            const ws = new WebSocket(proto + "//" + location.host + "/ws");
-            state.ws = ws;
-
-            ws.binaryType = "arraybuffer";
-
-            ws.onopen = () => {
-                $("footer-status").textContent = "Authenticating…";
-                ws.send(JSON.stringify({ type: "auth", password }));
-            };
-
-            ws.onmessage = (ev) => {
-                if (typeof ev.data === "string") {
-                    try {
-                        const msg = JSON.parse(ev.data);
-                        if (msg.type === "auth") {
-                            if (msg.success) {
-                                state.authenticated = true;
-                                $("loginOverlay").classList.add("hidden");
-                                $("footer-status").textContent = "Online";
-                                if (state.fitAddon) state.fitAddon.fit();
-                                // Notify shell of initial size
-                                setTimeout(() => {
-                                    if (state.term && state.ws.readyState === WebSocket.OPEN) {
-                                        state.ws.send(JSON.stringify({
-                                            type: "resize",
-                                            rows: state.term.rows,
-                                            cols: state.term.cols,
-                                        }));
-                                    }
-                                }, 100);
-                            } else {
-                                state.authenticated = false;
-                                $("loginError").textContent = "Invalid password";
-                                $("loginOverlay").classList.remove("hidden");
-                            }
-                        } else if (msg.type === "pong") {
-                            // heartbeat reply
-                        }
-                    } catch (e) {}
-                } else {
-                    // Binary terminal output
-                    if (state.term) {
-                        state.term.write(new Uint8Array(ev.data));
                     }
+
                 }
-            };
 
-            ws.onclose = () => {
-                state.authenticated = false;
-                $("footer-status").textContent = "Disconnected";
-                if (state.term) {
-                    state.term.writeln("\r\n\x1b[31m[connection closed]\x1b[0m");
-                }
-            };
+            } catch {
 
-            ws.onerror = (e) => {
-                console.error("WS error", e);
-                $("footer-status").textContent = "Error";
-            };
-        }
+                term?.write(event.data);
 
-        // ─────────────────────────────────────
-        // Panel switching
-        // ─────────────────────────────────────
-        function switchPanel(name) {
-            document.querySelectorAll(".nav-item").forEach((n) => {
-                n.classList.toggle("active", n.dataset.panel === name);
-            });
-            document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
-
-            if (name === "terminal") {
-                $("terminal-container").classList.add("active");
-                setTimeout(() => state.fitAddon && state.fitAddon.fit(), 50);
-            } else if (name === "files") {
-                $("files-panel").classList.add("active");
-                loadFiles(state.currentPath);
-            } else if (name === "settings") {
-                $("settings-panel").classList.add("active");
-                fetchStats();
             }
-        }
 
-        // ─────────────────────────────────────
-        // Files panel
-        // ─────────────────────────────────────
-        async function loadFiles(path) {
-            try {
-                const res = await fetch("/api/files?path=" + encodeURIComponent(path), { cache: "no-store" });
-                const data = await res.json();
-                if (data.error) {
-                    $("fileList").innerHTML =
-                        '<div class="file-row"><span class="f-name" style="color: var(--red);">' +
-                        escapeHtml(data.error) +
-                        "</span></div>";
-                    return;
-                }
-                state.currentPath = data.path;
-                $("filePath").value = data.path;
+        } else {
 
-                let html = "";
-                if (data.parent) {
-                    html +=
-                        '<div class="file-row" data-dir="1" data-path="' +
-                        escapeAttr(data.parent) +
-                        '">' +
-                        '<span class="f-icon">↩</span>' +
-                        '<span class="f-name" style="color: var(--accent);">..</span>' +
-                        "</div>";
-                }
-                if (!data.entries.length) {
-                    html +=
-                        '<div class="file-row"><span class="f-name" style="color: var(--text-mute);">Empty directory</span></div>';
-                }
-                for (const e of data.entries) {
-                    const icon = e.is_dir ? "▸" : "▪";
-                    const sizeStr = e.is_dir ? "—" : formatSize(e.size);
-                    const dateStr = new Date(e.mtime * 1000).toLocaleString();
-                    html +=
-                        '<div class="file-row" data-dir="' +
-                        (e.is_dir ? "1" : "0") +
-                        '" data-path="' +
-                        escapeAttr(data.path + "/" + e.name) +
-                        '">' +
-                        '<span class="f-icon">' + icon + "</span>" +
-                        '<span class="f-name">' + escapeHtml(e.name) + "</span>" +
-                        '<span class="f-size">' + sizeStr + "</span>" +
-                        '<span class="f-date">' + escapeHtml(dateStr) + "</span>" +
-                        "</div>";
-                }
-                $("fileList").innerHTML = html;
+            const reader =
+                new FileReader();
 
-                $("fileList").querySelectorAll(".file-row[data-path]").forEach((row) => {
-                    row.addEventListener("click", () => {
-                        const p = row.dataset.path;
-                        const isDir = row.dataset.dir === "1";
-                        if (isDir) loadFiles(p);
-                        else alert("File preview not implemented yet.\n\nPath:\n" + p);
-                    });
-                });
-            } catch (e) {
-                $("fileList").innerHTML =
-                    '<div class="file-row"><span class="f-name" style="color: var(--red);">Failed to load</span></div>';
-            }
-        }
+            reader.onload = () => {
 
-        function formatSize(bytes) {
-            if (bytes < 1024) return bytes + " B";
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-            if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + " MB";
-            return (bytes / 1024 / 1024 / 1024).toFixed(2) + " GB";
-        }
-        function escapeHtml(s) {
-            return String(s).replace(/[&<>"']/g, (c) => ({
-                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-            }[c]));
-        }
-        function escapeAttr(s) { return escapeHtml(s); }
+                term.write(
+                    new Uint8Array(
+                        reader.result
+                    )
+                );
 
-        // ─────────────────────────────────────
-        // Settings panel
-        // ─────────────────────────────────────
-        async function loadSettings() {
-            try {
-                const res = await fetch("/api/settings", { cache: "no-store" });
-                const s = await res.json();
-                state.settings = Object.assign(state.settings, s);
-            } catch (e) {}
-            $("setFontSize").value = state.settings.fontSize;
-            $("setFontFamily").value = state.settings.fontFamily;
-            $("setCursorBlink").checked = state.settings.cursorBlink;
-            $("setScrollback").value = state.settings.scrollback;
-            $("setStatsRefresh").value = state.settings.statsRefreshMs;
-        }
-
-        async function saveSettings() {
-            const s = {
-                fontSize: parseInt($("setFontSize").value, 10) || 14,
-                fontFamily: $("setFontFamily").value,
-                cursorBlink: $("setCursorBlink").checked,
-                scrollback: parseInt($("setScrollback").value, 10) || 5000,
-                statsRefreshMs: parseInt($("setStatsRefresh").value, 10) || 2000,
             };
-            state.settings = s;
-            try {
-                await fetch("/api/settings", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(s),
-                });
-            } catch (e) {}
 
-            // Rebuild terminal with new options
-            if (state.term) {
-                state.term.options.fontSize = s.fontSize;
-                state.term.options.fontFamily = s.fontFamily;
-                state.term.options.cursorBlink = s.cursorBlink;
-                state.term.options.scrollback = s.scrollback;
-            }
-            startStatsPolling();
-            alert("Settings saved.");
+            reader.readAsArrayBuffer(
+                event.data
+            );
+
         }
 
-        // ─────────────────────────────────────
-        // Bootstrap
-        // ─────────────────────────────────────
-        window.addEventListener("DOMContentLoaded", async () => {
-            buildTerminal();
-            await loadSettings();
-            startStatsPolling();
+    };
 
-            // Login
-            $("loginButton").addEventListener("click", () => {
-                const pw = $("loginPassword").value;
-                $("loginError").textContent = "";
-                connect(pw);
-            });
-            $("loginPassword").addEventListener("keydown", (e) => {
-                if (e.key === "Enter") $("loginButton").click();
-            });
+    socket.onclose = () => {
 
-            // Nav
-            document.querySelectorAll(".nav-item").forEach((item) => {
-                item.addEventListener("click", () => switchPanel(item.dataset.panel));
-            });
+        if (term) {
 
-            // Header buttons
-            $("clearBtn").addEventListener("click", () => state.term && state.term.clear());
-            $("reconnectBtn").addEventListener("click", () => {
-                if (state.ws) state.ws.close();
-                $("loginOverlay").classList.remove("hidden");
-                $("loginPassword").value = "";
-                $("loginPassword").focus();
-            });
+            term.write(
+                "\r\n\x1b[31mConnection closed.\x1b[0m\r\n"
+            );
 
-            // Files
-            $("refreshBtn").addEventListener("click", () => loadFiles(state.currentPath));
-            $("upBtn").addEventListener("click", () => {
-                const parent = state.currentPath.replace(/\/[^/]+\/?$/, "") || "/data";
-                loadFiles(parent || "/data");
-            });
+        }
 
-            // Settings
-            $("saveSettingsBtn").addEventListener("click", saveSettings);
+    };
 
-            // Resize
-            let resizeTimer = null;
-            window.addEventListener("resize", () => {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(() => {
-                    if (state.fitAddon && $("terminal-container").classList.contains("active")) {
-                        state.fitAddon.fit();
-                    }
-                }, 100);
-            });
-        });
-    })();
-    </script>
+}
+
+
+function startTerminal(password) {
+
+    term = new Terminal({
+
+        cursorBlink: true,
+
+        cursorStyle: "block",
+
+        fontFamily:
+            "'JetBrains Mono', 'Fira Code', monospace",
+
+        fontSize: 14,
+
+        lineHeight: 1.2,
+
+        theme: {
+
+            background: "#08080d",
+
+            foreground: "#e6e6f0",
+
+            cursor: "#a855f7",
+
+            cursorAccent: "#08080d",
+
+            selectionBackground:
+                "rgba(168,85,247,.28)",
+
+            black: "#101018",
+
+            red: "#fb7185",
+
+            green: "#4ade80",
+
+            yellow: "#facc15",
+
+            blue: "#60a5fa",
+
+            magenta: "#c084fc",
+
+            cyan: "#22d3ee",
+
+            white: "#f4f4f5",
+
+            brightBlack: "#52525b",
+
+            brightRed: "#fb7185",
+
+            brightGreen: "#86efac",
+
+            brightYellow: "#fde68a",
+
+            brightBlue: "#93c5fd",
+
+            brightMagenta: "#d8b4fe",
+
+            brightCyan: "#67e8f9",
+
+            brightWhite: "#ffffff"
+
+        }
+
+    });
+
+    fitAddon =
+        new FitAddon.FitAddon();
+
+    term.loadAddon(fitAddon);
+
+    term.open(
+        document.getElementById("terminal")
+    );
+
+    fitAddon.fit();
+
+    term.write(
+        "\x1b[1;35m"
+        + "\r\n"
+        + "  ⚡ Twin Terminal"
+        + "\r\n"
+        + "\x1b[0m"
+        + "\x1b[90m"
+        + "  Secure Linux Web Terminal"
+        + "\r\n"
+        + "  Connected successfully."
+        + "\r\n\r\n"
+        + "\x1b[0m"
+    );
+
+    term.onData((data) => {
+
+        socket.send(
+            JSON.stringify({
+                type: "input",
+                data: data
+            })
+        );
+
+    });
+
+    resizeTerminal();
+
+    term.focus();
+
+}
+
+
+function resizeTerminal() {
+
+    if (!fitAddon || !term) {
+        return;
+    }
+
+    fitAddon.fit();
+
+    if (socket?.readyState === WebSocket.OPEN) {
+
+        socket.send(
+            JSON.stringify({
+                type: "resize",
+
+                rows: term.rows,
+
+                cols: term.cols
+            })
+        );
+
+    }
+
+}
+
+
+function clearTerminal() {
+
+    if (term) {
+        term.clear();
+        term.focus();
+    }
+
+}
+
+
+function toggleSidebar() {
+
+    document
+        .getElementById("sidebar")
+        .classList.toggle("open");
+
+}
+
+
+function showError() {
+
+    document
+        .getElementById("error")
+        .style.display = "block";
+
+}
+
+
+window.addEventListener(
+    "resize",
+    resizeTerminal
+);
+
+
+document
+    .getElementById("password")
+    .addEventListener(
+        "keydown",
+        (event) => {
+
+            if (event.key === "Enter") {
+                connect();
+            }
+
+        }
+    );
+
+
+async function updateStats() {
+
+    try {
+
+        const response =
+            await fetch("/api/stats");
+
+        const data =
+            await response.json();
+
+        document
+            .getElementById("memory")
+            .textContent = data.memory;
+
+        document
+            .getElementById("cpu")
+            .textContent = data.cpu;
+
+    } catch {}
+
+}
+
+
+setInterval(
+    updateStats,
+    5000
+);
+
+updateStats();
+
+</script>
+
 </body>
 </html>
